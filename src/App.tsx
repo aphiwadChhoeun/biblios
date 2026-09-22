@@ -5,6 +5,7 @@ import { advanceAI, isAITurn } from './engine/ai';
 import { saveGame, loadGame, clearSavedGame } from './engine/storage';
 import SetupScreen from './ui/SetupScreen';
 import BoardScreen from './ui/BoardScreen';
+import EndScreen from './ui/EndScreen';
 
 type Screen = 'resume-prompt' | 'setup' | 'playing';
 
@@ -65,6 +66,10 @@ export default function App() {
 
   if (screen === 'setup' || !game) {
     return <SetupScreen onStart={handleStart} />;
+  }
+
+  if (game.pendingAction.type === 'game-over') {
+    return <EndScreen state={game} onNewGame={handleNewGame} />;
   }
 
   return <BoardScreen state={game} onAction={handleAction} />;
