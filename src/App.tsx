@@ -56,7 +56,7 @@ export default function App() {
   if (screen === 'resume-prompt') {
     return (
       <div className="resume-prompt">
-        <h1>Space Biblios</h1>
+        <h1>Star Manifest</h1>
         <p>A mission in progress was found.</p>
         <button onClick={handleResume}>Resume mission</button>
         <button onClick={handleNewGame}>Start new mission</button>

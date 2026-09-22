@@ -30,7 +30,7 @@ export default function SetupScreen({ onStart }: { onStart: (configs: PlayerConf
 
   return (
     <div className="setup-screen">
-      <h1>Space Biblios</h1>
+      <h1>Star Manifest</h1>
       <p>Assemble your crew of 2-4 captains.</p>
       {seats.map((seat, index) => (
         <div className="seat-row" key={index}>
