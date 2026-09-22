@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocateGiftCard, drawFromCargoBay, startGiftTurn } from './giftPhase';
+import { allocateGiftCard, continueGiftAfterMission, drawFromCargoBay, startGiftTurn } from './giftPhase';
 import { Card, GameState } from './types';
 
 function makePlayer(id: string, name: string) {
@@ -110,11 +110,123 @@ describe('mission control interrupt', () => {
     });
   });
 
-  it('does not interrupt when a mission card is routed to the auction bay or cargo bay', () => {
+  it('does not interrupt when a mission card is routed to the auction bay', () => {
     const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
     const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
     let state = startGiftTurn(baseState(deck));
     state = allocateGiftCard(state, 'auction');
     expect(state.pendingAction.type).toBe('gift-allocate');
+  });
+
+  it('does not interrupt when a mission card is routed to the cargo bay during allocation', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'cargo');
+    expect(state.pendingAction.type).toBe('gift-allocate');
+  });
+
+  it('pauses for resolution when a mission card is drafted from the Cargo Bay', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'cargo'); // mission -> cargo (no interrupt)
+    state = allocateGiftCard(state, 'self'); // card2 -> self
+    state = allocateGiftCard(state, 'auction'); // card3 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    // Draft: James (p2) is first to draw and picks up the mission card.
+    expect(state.pendingAction).toEqual({ type: 'gift-draw', playerId: 'p2' });
+    expect(state.cargoBay.map((c) => c.id)).toEqual(['m1', 'c4']);
+    state = drawFromCargoBay(state, 'm1');
+
+    expect(state.pendingAction).toEqual({
+      type: 'mission-resolve',
+      playerId: 'p2',
+      card: mission,
+      resumeAfter: 'gift-draft',
+    });
+  });
+
+  it('continueGiftAfterMission resumes the allocation loop after a self-kept mission card', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'self');
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = continueGiftAfterMission(state, 'gift-allocate');
+    expect(state.pendingAction).toMatchObject({
+      type: 'gift-allocate',
+      playerId: 'p1',
+      drawnCard: deck[1],
+      selfFilled: true,
+      auctionFilled: false,
+    });
+  });
+
+  it('continueGiftAfterMission resumes the draft queue after a drafted mission card', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'cargo'); // mission -> cargo (no interrupt)
+    state = allocateGiftCard(state, 'self'); // card2 -> self
+    state = allocateGiftCard(state, 'auction'); // card3 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    state = drawFromCargoBay(state, 'm1'); // James drafts the mission card -> interrupt
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = continueGiftAfterMission(state, 'gift-draft');
+    // Steve is next in the draft queue; the mission card is already out of the Cargo Bay,
+    // and card4 is still there for Steve to take.
+    expect(state.pendingAction).toEqual({ type: 'gift-draw', playerId: 'p3' });
+    expect(state.cargoBay.map((c) => c.id)).toEqual(['c4']);
+  });
+});
+
+describe('enforces mandatory self/auction slots', () => {
+  function twoPlayerState(supplyDeck: Card[], giftCardsPerTurn: number): GameState {
+    return {
+      phase: 'gift',
+      players: [makePlayer('p1', 'Bob'), makePlayer('p2', 'James')],
+      activePlayerIndex: 0,
+      firstPlayerIndex: 0,
+      dice: { fuel: 3, crew: 3, chart: 3, data: 3, artifact: 3 },
+      supplyDeck,
+      auctionBay: [],
+      cargoBay: [],
+      discardPile: [],
+      giftTurn: null,
+      giftDraftQueue: [],
+      giftCardsPerTurn,
+      pendingAction: { type: 'scoring' },
+      log: [],
+    };
+  }
+
+  it('throws when routing a card to cargo would strand a still-unfilled mandatory slot', () => {
+    const deck = [cardAt(1), cardAt(2), cardAt(3)];
+    let state = startGiftTurn(twoPlayerState(deck, 3));
+
+    // Card 1: 2 draws remain after this one (cards 2 and 3), and self+auction are both
+    // still unfilled -- exactly enough room, so cargo is still allowed here.
+    state = allocateGiftCard(state, 'cargo');
+
+    // Card 2: only 1 draw remains after this one (card 3), but self+auction are both
+    // still unfilled -- routing this one to cargo too would make it impossible to still
+    // fill both mandatory slots, so it must throw.
+    expect(() => allocateGiftCard(state, 'cargo')).toThrow();
+  });
+
+  it('still allows cargo once enough draws remain to cover the still-unfilled mandatory slots', () => {
+    const deck = [cardAt(1), cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(twoPlayerState(deck, 4));
+
+    state = allocateGiftCard(state, 'self'); // card1 -> self (1 of 2 mandatory slots filled)
+    // Card 2: 2 draws remain after this one (cards 3 and 4), and only auction is still
+    // unfilled -- more than enough room, so cargo is fine here.
+    state = allocateGiftCard(state, 'cargo');
+    expect(state.pendingAction).toMatchObject({ type: 'gift-allocate', drawnCard: deck[2] });
   });
 });

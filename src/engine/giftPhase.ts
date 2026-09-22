@@ -33,6 +33,14 @@ export function allocateGiftCard(state: GameState, destination: 'self' | 'auctio
   if (destination === 'self' && selfFilled) throw new Error('Self slot already filled this turn');
   if (destination === 'auction' && auctionFilled) throw new Error('Auction slot already filled this turn');
 
+  if (destination === 'cargo') {
+    const remainingAfterThis = state.giftCardsPerTurn - giftTurn.cardsDrawn;
+    const unfilledMandatorySlots = (selfFilled ? 0 : 1) + (auctionFilled ? 0 : 1);
+    if (remainingAfterThis < unfilledMandatorySlots) {
+      throw new Error('Must fill the remaining mandatory slot(s) before the turn ends');
+    }
+  }
+
   let nextState: GameState = { ...state };
   let interrupted = false;
 
