@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Star Manifest">
+  <!-- Hull tile, opaque so the mark holds on light and dark tab bars alike. -->
+  <rect width="32" height="32" rx="6" fill="#0b1020"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="5.5" fill="none" stroke="#1e3358"/>
+
+  <!-- A single manifest slip. Deliberately square-on: a tilted card or a
+       second card behind it both collapse into grey mush at 16px. -->
+  <rect x="9" y="5" width="15" height="22" rx="1.5" fill="#dbe4f3"/>
+
+  <!-- Amber stripe down the punched edge, as on the card faces. -->
+  <path d="M9 5h3.6v22H9z" fill="#ffb612"/>
+</svg>
