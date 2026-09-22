@@ -2,6 +2,7 @@ import { EngineAction, GameState } from '../engine/types';
 import CommandConsole from './CommandConsole';
 import { OwnHand, OpponentSeat } from './PlayerHand';
 import CargoBay from './CargoBay';
+import ActionPanel from './ActionPanel';
 
 export function currentActorId(state: GameState): string | null {
   const pa = state.pendingAction;
@@ -20,7 +21,7 @@ export function currentActorId(state: GameState): string | null {
   }
 }
 
-export default function BoardScreen({ state, onAction: _onAction }: { state: GameState; onAction: (action: EngineAction) => void }) {
+export default function BoardScreen({ state, onAction }: { state: GameState; onAction: (action: EngineAction) => void }) {
   const actorId = currentActorId(state);
   const actor = state.players.find((p) => p.id === actorId);
   const showCargoBayPanel = state.pendingAction.type !== 'gift-draw';
@@ -39,7 +40,7 @@ export default function BoardScreen({ state, onAction: _onAction }: { state: Gam
           ))}
       </div>
       {showCargoBayPanel && <CargoBay cards={state.cargoBay} selectable={false} />}
-      <div className="action-panel-slot" data-testid="action-panel-slot" />
+      <ActionPanel state={state} onAction={onAction} />
       {actor && <h3>{actor.name}'s hand</h3>}
       {actor && <OwnHand hand={actor.hand} />}
       <div className="piles-info">
