@@ -4,6 +4,7 @@ import CommandConsole from './CommandConsole';
 import { OwnHand, OpponentSeat } from './PlayerHand';
 import CargoBay from './CargoBay';
 import ActionPanel from './ActionPanel';
+import MuteToggle from './MuteToggle';
 import { PHASE_LABEL } from './theme';
 
 export function currentActorId(state: GameState): string | null {
@@ -85,6 +86,7 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
             <span>Discard</span>
           </span>
         </div>
+        <MuteToggle />
       </header>
 
       <aside className="seat-roster">

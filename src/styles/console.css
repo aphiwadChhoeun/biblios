@@ -177,3 +177,30 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+
+/* Mute toggle ------------------------------------------------------------ */
+.mute-toggle {
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: var(--t-md);
+  line-height: 1;
+  background: radial-gradient(120% 90% at 50% 0%, #16223c 0%, #070d1a 70%);
+  border: 1px solid var(--rim);
+  border-radius: 3px;
+  box-shadow: var(--inset);
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.mute-toggle:hover {
+  border-color: var(--rim-hot);
+}
+
+.mute-toggle[aria-pressed='true'] {
+  color: var(--ink-faint);
+}

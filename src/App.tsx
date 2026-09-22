@@ -3,6 +3,8 @@ import { GameState, EngineAction } from './engine/types';
 import { createGame, dispatch, PlayerConfig } from './engine/gameEngine';
 import { advanceAI, isAITurn } from './engine/ai';
 import { saveGame, loadGame, clearSavedGame } from './engine/storage';
+import { detectSoundEvent } from './audio/soundEvents';
+import { playSound } from './audio/playSound';
 import SetupScreen from './ui/SetupScreen';
 import BoardScreen from './ui/BoardScreen';
 import EndScreen from './ui/EndScreen';
@@ -27,7 +29,12 @@ export default function App() {
     if (!game) return;
     saveGame(game);
     if (isAITurn(game)) {
-      const timer = setTimeout(() => setGame(advanceAI(game)), AI_MOVE_DELAY_MS);
+      const timer = setTimeout(() => {
+        const next = advanceAI(game);
+        const sound = detectSoundEvent(game, next);
+        if (sound) playSound(sound);
+        setGame(next);
+      }, AI_MOVE_DELAY_MS);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -44,7 +51,10 @@ export default function App() {
     // The board disables its controls during AI turns; this guards every other
     // path so a human can never dispatch on a bot's behalf.
     if (isAITurn(game)) return;
-    setGame(dispatch(game, action));
+    const next = dispatch(game, action);
+    const sound = detectSoundEvent(game, next);
+    if (sound) playSound(sound);
+    setGame(next);
   }
 
   function handleResume() {
