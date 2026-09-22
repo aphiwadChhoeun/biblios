@@ -58,6 +58,12 @@ function categoryStanding(state: GameState, playerId: string, category: Category
     .reduce((sum, c) => sum + c.value, 0);
 }
 
+// LIMITATION (flagged in final review, deliberately deferred): this reads every opponent's
+// full hidden-hand state (`player.hand`) rather than only publicly-known information, which
+// technically gives the AI perfect information about opponents' hidden hands -- a spec-§6
+// violation ("bots do not see opponents' hidden hands"). A faithful fix would require a new
+// public-knowledge-tracking mechanism (e.g. recording every card publicly revealed via a
+// Cargo Bay draft or an auction win) and is a larger architectural change than fits here.
 function bestOpponentStanding(state: GameState, playerId: string, category: CategoryId): number {
   return Math.max(
     0,
@@ -149,9 +155,17 @@ export function decideMissionAdjustments(state: GameState, playerId: string): Mi
     lead: categoryStanding(state, playerId, category) - bestOpponentStanding(state, playerId, category),
   })).sort((a, b) => b.lead - a.lead);
 
+  // For a 'plus' card, buff our own strongest leads (front of the descending-by-lead list).
+  // For a 'minus' card, applying -1 to our own strongest category would sabotage ourselves --
+  // instead attack wherever an opponent leads the most, i.e. the categories with the most
+  // negative lead (the tail of the descending list, equivalently the front once reversed).
+  // The 'mixed' branch below already reasons about direction per-target using this same
+  // descending-ranked list, so it is left targeting from the front unchanged.
+  const targets = card.modifier === 'minus' ? [...ranked].reverse() : ranked;
+
   const adjustments: MissionAdjustment[] = [];
   for (let i = 0; i < card.diceCount; i += 1) {
-    const target = ranked[i];
+    const target = targets[i];
     const direction: 'plus' | 'minus' =
       card.modifier === 'mixed' ? (target.lead >= 0 ? 'plus' : 'minus') : card.modifier;
     adjustments.push({ category: target.category, direction });
