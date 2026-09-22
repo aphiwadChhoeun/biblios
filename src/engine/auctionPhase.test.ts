@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { beginAuctionPhase, forfeitPayment, passBid, payForAuction, placeBid, revealTopCard } from './auctionPhase';
+import { declineMissionCard, resolveMissionCard } from './missionControl';
 import { Card, GameState } from './types';
 
 function makePlayer(id: string, name: string, hand: Card[] = []) {
@@ -120,6 +121,61 @@ describe('payment', () => {
     const bob = result.players.find((p) => p.id === 'p1')!;
     expect(bob.hand).toEqual([goldCard]);
     expect(result.discardPile).toEqual([monk, gold1]);
+  });
+});
+
+describe('mission control interrupt at auction', () => {
+  it('does not duplicate a mission card won at auction into the hand after it is resolved', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const gold2: Card = { id: 'g2', kind: 'credits', value: 2 };
+    let state = baseState({
+      players: [
+        makePlayer('p1', 'Bob'),
+        makePlayer('p2', 'James', [gold2]),
+        makePlayer('p3', 'Steve'),
+      ],
+      pendingAction: { type: 'auction-pay', card: mission, payerId: 'p2', bidAmount: 2 },
+      phase: 'auction',
+    });
+
+    state = payForAuction(state, ['g2']);
+    expect(state.pendingAction).toEqual({
+      type: 'mission-resolve',
+      playerId: 'p2',
+      card: mission,
+      resumeAfter: 'auction',
+    });
+
+    state = resolveMissionCard(state, [{ category: 'crew', direction: 'plus' }]);
+
+    const james = state.players.find((p) => p.id === 'p2')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(james.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
+  });
+
+  it('does not duplicate a mission card won at auction into the hand after it is declined', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const gold2: Card = { id: 'g2', kind: 'credits', value: 2 };
+    let state = baseState({
+      players: [
+        makePlayer('p1', 'Bob'),
+        makePlayer('p2', 'James', [gold2]),
+        makePlayer('p3', 'Steve'),
+      ],
+      pendingAction: { type: 'auction-pay', card: mission, payerId: 'p2', bidAmount: 2 },
+      phase: 'auction',
+    });
+
+    state = payForAuction(state, ['g2']);
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = declineMissionCard(state);
+
+    const james = state.players.find((p) => p.id === 'p2')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(james.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
   });
 });
 

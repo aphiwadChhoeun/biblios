@@ -145,7 +145,13 @@ export function payForAuction(state: GameState, cardIds: string[]): GameState {
 
   const paidIds = new Set(cardIds);
   const remainingHand = payer.hand.filter((c) => !paidIds.has(c.id));
-  const players = state.players.map((p) => (p.id === payerId ? { ...p, hand: [...remainingHand, card] } : p));
+  const isMission = card.kind === 'mission';
+  // A won mission card is immediately played and discarded by the mission-resolve
+  // interrupt below, so it must never also be added to the payer's hand here -- only
+  // add a non-mission card to hand (mirrors the same fix in giftPhase.ts).
+  const players = state.players.map((p) =>
+    p.id === payerId ? { ...p, hand: isMission ? remainingHand : [...remainingHand, card] } : p
+  );
 
   const nextState: GameState = {
     ...state,
@@ -153,7 +159,7 @@ export function payForAuction(state: GameState, cardIds: string[]): GameState {
     discardPile: [...state.discardPile, ...paymentCards],
   };
 
-  if (card.kind === 'mission') {
+  if (isMission) {
     return {
       ...nextState,
       pendingAction: { type: 'mission-resolve', playerId: payerId, card, resumeAfter: 'auction' },
