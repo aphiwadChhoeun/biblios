@@ -6,6 +6,17 @@ function drawOne(state: GameState): { card: Card; rest: Card[] } {
   return { card, rest };
 }
 
+function computeCargoAllowed(
+  giftCardsPerTurn: number,
+  cardsDrawn: number,
+  selfFilled: boolean,
+  auctionFilled: boolean
+): boolean {
+  const remainingAfterThis = giftCardsPerTurn - cardsDrawn;
+  const unfilledMandatorySlots = (selfFilled ? 0 : 1) + (auctionFilled ? 0 : 1);
+  return remainingAfterThis >= unfilledMandatorySlots;
+}
+
 export function startGiftTurn(state: GameState): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
   const { card, rest } = drawOne(state);
@@ -19,6 +30,7 @@ export function startGiftTurn(state: GameState): GameState {
       drawnCard: card,
       selfFilled: false,
       auctionFilled: false,
+      cargoAllowed: computeCargoAllowed(state.giftCardsPerTurn, 1, false, false),
     },
   };
 }
@@ -34,9 +46,7 @@ export function allocateGiftCard(state: GameState, destination: 'self' | 'auctio
   if (destination === 'auction' && auctionFilled) throw new Error('Auction slot already filled this turn');
 
   if (destination === 'cargo') {
-    const remainingAfterThis = state.giftCardsPerTurn - giftTurn.cardsDrawn;
-    const unfilledMandatorySlots = (selfFilled ? 0 : 1) + (auctionFilled ? 0 : 1);
-    if (remainingAfterThis < unfilledMandatorySlots) {
+    if (!computeCargoAllowed(state.giftCardsPerTurn, giftTurn.cardsDrawn, selfFilled, auctionFilled)) {
       throw new Error('Must fill the remaining mandatory slot(s) before the turn ends');
     }
   }
@@ -88,6 +98,12 @@ function advanceGiftFlow(state: GameState): GameState {
         drawnCard: card,
         selfFilled: giftTurn.selfFilled,
         auctionFilled: giftTurn.auctionFilled,
+        cargoAllowed: computeCargoAllowed(
+          state.giftCardsPerTurn,
+          giftTurn.cardsDrawn + 1,
+          giftTurn.selfFilled,
+          giftTurn.auctionFilled
+        ),
       },
     };
   }

@@ -322,4 +322,17 @@ describe('enforces mandatory self/auction slots', () => {
     state = allocateGiftCard(state, 'cargo');
     expect(state.pendingAction).toMatchObject({ type: 'gift-allocate', drawnCard: deck[2] });
   });
+
+  it('exposes cargoAllowed: false on the pendingAction once cargo would strand a mandatory slot', () => {
+    const deck = [cardAt(1), cardAt(2), cardAt(3)];
+    let state = startGiftTurn(twoPlayerState(deck, 3));
+
+    // Card 1: exactly enough room remains, so cargo is still allowed here.
+    expect(state.pendingAction).toMatchObject({ type: 'gift-allocate', cargoAllowed: true });
+    state = allocateGiftCard(state, 'cargo');
+
+    // Card 2: only 1 draw remains after this one but both mandatory slots are still
+    // unfilled, so the UI must reflect that Cargo Bay is no longer a legal destination.
+    expect(state.pendingAction).toMatchObject({ type: 'gift-allocate', drawnCard: deck[1], cargoAllowed: false });
+  });
 });

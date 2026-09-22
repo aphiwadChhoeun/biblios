@@ -63,7 +63,14 @@ export interface MissionAdjustment {
 }
 
 export type PendingAction =
-  | { type: 'gift-allocate'; playerId: string; drawnCard: Card; selfFilled: boolean; auctionFilled: boolean }
+  | {
+      type: 'gift-allocate';
+      playerId: string;
+      drawnCard: Card;
+      selfFilled: boolean;
+      auctionFilled: boolean;
+      cargoAllowed: boolean;
+    }
   | { type: 'gift-draw'; playerId: string }
   | { type: 'auction-reveal'; playerId: string }
   | { type: 'auction-bid'; bid: BidState }

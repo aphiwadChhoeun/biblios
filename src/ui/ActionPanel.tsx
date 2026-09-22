@@ -19,7 +19,9 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
           <button disabled={pending.auctionFilled} onClick={() => onAction({ type: 'allocate', destination: 'auction' })}>
             Send to Auction Bay
           </button>
-          <button onClick={() => onAction({ type: 'allocate', destination: 'cargo' })}>Send to Cargo Bay</button>
+          <button disabled={!pending.cargoAllowed} onClick={() => onAction({ type: 'allocate', destination: 'cargo' })}>
+            Send to Cargo Bay
+          </button>
         </div>
       </div>
     );
