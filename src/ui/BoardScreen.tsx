@@ -25,6 +25,10 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
   const actorId = currentActorId(state);
   const actor = state.players.find((p) => p.id === actorId);
   const showCargoBayPanel = state.pendingAction.type !== 'gift-draw';
+  // Only reveal a hand face-up as the human player's "own hand" when the pending actor is a
+  // human. AI turns auto-advance and would otherwise briefly show the bot's hidden hand,
+  // breaking the game's hidden-information mechanic.
+  const showOwnHand = !!actor && !actor.isAI;
 
   return (
     <div className="board-screen">
@@ -34,15 +38,15 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
       </div>
       <div className="opponents-row">
         {state.players
-          .filter((p) => p.id !== actor?.id)
+          .filter((p) => (showOwnHand ? p.id !== actor!.id : true))
           .map((p) => (
             <OpponentSeat key={p.id} name={p.name} cardCount={p.hand.length} isActive={p.id === actorId} />
           ))}
       </div>
       {showCargoBayPanel && <CargoBay cards={state.cargoBay} selectable={false} />}
       <ActionPanel state={state} onAction={onAction} />
-      {actor && <h3>{actor.name}'s hand</h3>}
-      {actor && <OwnHand hand={actor.hand} />}
+      {showOwnHand && <h3>{actor!.name}'s hand</h3>}
+      {showOwnHand && <OwnHand hand={actor!.hand} />}
       <div className="piles-info">
         Supply Deck: {state.supplyDeck.length} | Auction Bay: {state.auctionBay.length} | Discard: {state.discardPile.length}
       </div>
