@@ -45,8 +45,12 @@ export function allocateGiftCard(state: GameState, destination: 'self' | 'auctio
   let interrupted = false;
 
   if (destination === 'self') {
-    nextState.giftTurn = { ...giftTurn, selfFilled: true, selfCard: drawnCard };
-    if (drawnCard.kind === 'mission') interrupted = true;
+    const isMission = drawnCard.kind === 'mission';
+    // A mission card kept to self is immediately played and discarded by the
+    // mission-resolve interrupt, so it must never also be added to the hand via
+    // finishGiftTurn's selfCard handoff -- only track a non-mission card there.
+    nextState.giftTurn = { ...giftTurn, selfFilled: true, selfCard: isMission ? null : drawnCard };
+    if (isMission) interrupted = true;
   } else if (destination === 'auction') {
     nextState.auctionBay = [...state.auctionBay, drawnCard];
     nextState.giftTurn = { ...giftTurn, auctionFilled: true };
@@ -131,12 +135,18 @@ export function drawFromCargoBay(state: GameState, cardId: string): GameState {
   if (!card) throw new Error(`Card ${cardId} not in Cargo Bay`);
 
   const cargoBay = state.cargoBay.filter((c) => c.id !== cardId);
-  const players = state.players.map((p) => (p.id === playerId ? { ...p, hand: [...p.hand, card] } : p));
+  const isMission = card.kind === 'mission';
+  // A drafted mission card is immediately played and discarded by the mission-resolve
+  // interrupt below, so it must never also land in the drafting player's hand -- only
+  // add a non-mission card to hand here.
+  const players = isMission
+    ? state.players
+    : state.players.map((p) => (p.id === playerId ? { ...p, hand: [...p.hand, card] } : p));
   const giftDraftQueue = state.giftDraftQueue.slice(1);
 
   const nextState: GameState = { ...state, cargoBay, players, giftDraftQueue };
 
-  if (card.kind === 'mission') {
+  if (isMission) {
     return {
       ...nextState,
       pendingAction: { type: 'mission-resolve', playerId, card, resumeAfter: 'gift-draft' },

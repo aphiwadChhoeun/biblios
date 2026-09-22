@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { allocateGiftCard, continueGiftAfterMission, drawFromCargoBay, startGiftTurn } from './giftPhase';
+import { declineMissionCard, resolveMissionCard } from './missionControl';
 import { Card, GameState } from './types';
 
 function makePlayer(id: string, name: string) {
@@ -148,6 +149,52 @@ describe('mission control interrupt', () => {
     });
   });
 
+  it('does not duplicate a Cargo-Bay-drafted mission card into the hand after it is discarded (declined)', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'cargo'); // mission -> cargo (no interrupt)
+    state = allocateGiftCard(state, 'self'); // card2 -> self
+    state = allocateGiftCard(state, 'auction'); // card3 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    state = drawFromCargoBay(state, 'm1'); // James drafts the mission card -> interrupt
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = declineMissionCard(state); // discards the mission card, no dice effect
+    state = continueGiftAfterMission(state, 'gift-draft');
+
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // Steve drafts the remaining card
+
+    const james = state.players.find((p) => p.id === 'p2')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(james.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
+  });
+
+  it('does not duplicate a Cargo-Bay-drafted mission card into the hand after it is resolved', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'cargo'); // mission -> cargo (no interrupt)
+    state = allocateGiftCard(state, 'self'); // card2 -> self
+    state = allocateGiftCard(state, 'auction'); // card3 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    state = drawFromCargoBay(state, 'm1'); // James drafts the mission card -> interrupt
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = resolveMissionCard(state, [{ category: 'crew', direction: 'plus' }]);
+    state = continueGiftAfterMission(state, 'gift-draft');
+
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // Steve drafts the remaining card
+
+    const james = state.players.find((p) => p.id === 'p2')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(james.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
+  });
+
   it('continueGiftAfterMission resumes the allocation loop after a self-kept mission card', () => {
     const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
     const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
@@ -182,6 +229,52 @@ describe('mission control interrupt', () => {
     // and card4 is still there for Steve to take.
     expect(state.pendingAction).toEqual({ type: 'gift-draw', playerId: 'p3' });
     expect(state.cargoBay.map((c) => c.id)).toEqual(['c4']);
+  });
+
+  it('does not duplicate a self-kept mission card into the hand after it is discarded (declined)', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'self'); // mission -> self, interrupts
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = declineMissionCard(state); // discards the mission card, no dice effect
+    state = continueGiftAfterMission(state, 'gift-allocate');
+
+    state = allocateGiftCard(state, 'auction'); // card2 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card3 -> cargo
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // James drafts
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // Steve drafts
+
+    const bob = state.players.find((p) => p.id === 'p1')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(bob.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
+  });
+
+  it('does not duplicate a self-kept mission card into the hand after it is resolved', () => {
+    const mission: Card = { id: 'm1', kind: 'mission', modifier: 'plus', diceCount: 1 };
+    const deck = [mission, cardAt(2), cardAt(3), cardAt(4)];
+    let state = startGiftTurn(baseState(deck));
+    state = allocateGiftCard(state, 'self'); // mission -> self, interrupts
+    expect(state.pendingAction.type).toBe('mission-resolve');
+
+    state = resolveMissionCard(state, [{ category: 'crew', direction: 'plus' }]);
+    state = continueGiftAfterMission(state, 'gift-allocate');
+
+    state = allocateGiftCard(state, 'auction'); // card2 -> auction
+    state = allocateGiftCard(state, 'cargo'); // card3 -> cargo
+    state = allocateGiftCard(state, 'cargo'); // card4 -> forced cargo
+
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // James drafts
+    state = drawFromCargoBay(state, state.cargoBay[0].id); // Steve drafts
+
+    const bob = state.players.find((p) => p.id === 'p1')!;
+    expect(state.discardPile).toContainEqual(mission);
+    expect(bob.hand.find((c) => c.id === 'm1')).toBeUndefined();
+    expect(state.discardPile.filter((c) => c.id === 'm1')).toHaveLength(1);
   });
 });
 
