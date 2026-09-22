@@ -1,19 +1,11 @@
+@import './styles/tokens.css';
+@import './styles/base.css';
+@import './styles/starfield.css';
+@import './styles/console.css';
+@import './styles/cards.css';
+@import './styles/panels.css';
+@import './styles/screens.css';
+
 :root {
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
-}
-
-body {
-  margin: 0;
-  background: #0b1020;
-  color: #e6ecf5;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }

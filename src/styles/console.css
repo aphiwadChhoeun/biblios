@@ -1,0 +1,179 @@
+/* The telemetry strip. The five gauges are the hero of the screen: they are
+   what a player checks constantly, so they get the depth, the illumination
+   and the only glass treatment in the whole interface. */
+
+.telemetry-strip {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-5);
+  padding: var(--s-3) var(--s-5);
+  background: linear-gradient(180deg, #0a1122 0%, #060b16 100%);
+  border-bottom: 1px solid var(--rim);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+}
+
+.strip-identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 180px;
+  border-left: 3px solid var(--amber);
+  padding-left: var(--s-3);
+}
+
+.strip-title {
+  font-size: var(--t-md);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.strip-phase {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--amber);
+  letter-spacing: 0.08em;
+}
+
+.strip-phase .actor {
+  color: var(--ink-dim);
+}
+
+/* Gauges ---------------------------------------------------------------- */
+.command-console {
+  display: flex;
+  gap: var(--s-3);
+  flex: 1;
+  /* Without this the five gauges set a min-content floor and push the whole
+     page wider than the viewport. */
+  min-width: 0;
+  justify-content: center;
+}
+
+.die {
+  --hue: var(--rim-hot);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 104px;
+  padding: var(--s-2) var(--s-3) var(--s-3);
+  background: radial-gradient(120% 90% at 50% 0%, #16223c 0%, #070d1a 70%);
+  border: 1px solid var(--rim);
+  border-top: 2px solid var(--hue);
+  border-radius: 3px;
+  box-shadow: var(--inset);
+  overflow: hidden;
+}
+
+/* Faint curved reflection: reads as instrument glass, one element only. */
+.die::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 55% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent);
+  pointer-events: none;
+}
+
+.die-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.die-icon {
+  font-size: var(--t-sm);
+  filter: saturate(1.1);
+}
+
+.die-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.die-value {
+  font-size: var(--t-2xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--hue);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--hue) 55%, transparent);
+  align-self: end;
+  justify-self: end;
+}
+
+/* Value bar: reading the dice at a glance without parsing digits. */
+.die-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--hue);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--hue) 70%, transparent);
+  transition: width var(--slow) var(--ease);
+}
+
+/* Fires when a Mission Control card moves this category. */
+.die.changed {
+  animation: gauge-kick var(--slow) var(--ease);
+}
+
+.die.changed .die-value {
+  animation: value-flip var(--slow) var(--ease);
+}
+
+@keyframes gauge-kick {
+  0% {
+    box-shadow: var(--inset);
+  }
+  35% {
+    box-shadow: var(--inset), 0 0 0 1px var(--hue), 0 0 26px color-mix(in srgb, var(--hue) 60%, transparent);
+  }
+  100% {
+    box-shadow: var(--inset);
+  }
+}
+
+@keyframes value-flip {
+  0% {
+    transform: translateY(-60%);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Pile counters --------------------------------------------------------- */
+.piles-info {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: var(--t-xs);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.pile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.pile-stat b {
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pile-stat span {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

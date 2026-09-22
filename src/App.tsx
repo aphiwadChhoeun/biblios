@@ -6,6 +6,8 @@ import { saveGame, loadGame, clearSavedGame } from './engine/storage';
 import SetupScreen from './ui/SetupScreen';
 import BoardScreen from './ui/BoardScreen';
 import EndScreen from './ui/EndScreen';
+import Starfield from './ui/Starfield';
+import GameTitle from './ui/GameTitle';
 
 type Screen = 'resume-prompt' | 'setup' | 'playing';
 
@@ -53,24 +55,37 @@ export default function App() {
     setScreen('setup');
   }
 
+  let screenContent;
+
   if (screen === 'resume-prompt') {
-    return (
-      <div className="resume-prompt">
-        <h1>Star Manifest</h1>
-        <p>A mission in progress was found.</p>
-        <button onClick={handleResume}>Resume mission</button>
-        <button onClick={handleNewGame}>Start new mission</button>
+    screenContent = (
+      <div className="launch-shell">
+        <div className="launch-console panel resume-prompt">
+          <GameTitle kicker="Mission in progress" />
+          <p className="launch-lede">A saved mission was found. Pick up where you left off, or scrap it and start over.</p>
+          <div className="launch-actions">
+            <button className="start-button" onClick={handleResume}>
+              Resume mission
+            </button>
+            <button className="danger" onClick={handleNewGame}>
+              Start new mission
+            </button>
+          </div>
+        </div>
       </div>
     );
+  } else if (screen === 'setup' || !game) {
+    screenContent = <SetupScreen onStart={handleStart} />;
+  } else if (game.pendingAction.type === 'game-over') {
+    screenContent = <EndScreen state={game} onNewGame={handleNewGame} />;
+  } else {
+    screenContent = <BoardScreen state={game} onAction={handleAction} />;
   }
 
-  if (screen === 'setup' || !game) {
-    return <SetupScreen onStart={handleStart} />;
-  }
-
-  if (game.pendingAction.type === 'game-over') {
-    return <EndScreen state={game} onNewGame={handleNewGame} />;
-  }
-
-  return <BoardScreen state={game} onAction={handleAction} />;
+  return (
+    <>
+      <Starfield />
+      {screenContent}
+    </>
+  );
 }

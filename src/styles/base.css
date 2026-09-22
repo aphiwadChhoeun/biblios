@@ -1,0 +1,194 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--t-3xl);
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--t-xl);
+}
+h3 {
+  font-size: var(--t-md);
+}
+
+p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Console nameplate: the one place caps are used, because that is what is
+   silk-screened on real panel hardware. */
+.nameplate {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Buttons ------------------------------------------------------------- */
+button {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--hull-lift), var(--hull));
+  border: 1px solid var(--rim);
+  border-radius: 2px;
+  padding: var(--s-2) var(--s-4);
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease),
+    transform var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--rim-hot);
+  background: linear-gradient(180deg, #1a2949, var(--hull-lift));
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+/* The one button per screen that commits you to something. */
+button.primary,
+button.start-button {
+  color: var(--void);
+  background: linear-gradient(180deg, #ffc93f, var(--amber));
+  border-color: var(--amber-deep);
+  text-shadow: none;
+}
+
+button.primary:hover:not(:disabled),
+button.start-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffd868, #ffbe2c);
+  border-color: var(--amber);
+}
+
+button.danger {
+  border-color: #5e2318;
+  color: #ff8b76;
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--orange);
+  background: linear-gradient(180deg, #2a1310, #1b0d0b);
+}
+
+input,
+select {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--ink);
+  background: var(--hull-sunken);
+  border: 1px solid var(--rim);
+  border-radius: 2px;
+  padding: var(--s-2) var(--s-3);
+}
+
+input[type='number'] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  width: 6.5ch;
+}
+
+input:focus,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+input:disabled {
+  color: var(--ink-faint);
+  border-style: dashed;
+}
+
+/* Thin hull-coloured scrollbars; the chunky default breaks the console. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rim) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rim);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--rim-hot);
+}
+
+/* Panel: the shared hull-plate surface, with a cut corner so it reads as
+   fabricated metal rather than a generic rounded card. */
+.panel {
+  position: relative;
+  background: linear-gradient(180deg, var(--hull) 0%, var(--hull-sunken) 100%);
+  border: 1px solid var(--rim);
+  border-radius: 2px;
+  box-shadow: var(--lift-1);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

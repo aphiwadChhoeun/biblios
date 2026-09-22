@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { CSSProperties, useState } from 'react';
 import { Card, CATEGORY_LABEL, CATEGORY_ORDER, EngineAction, GameState, MissionAdjustment } from '../engine/types';
-import { describeCard } from './PlayerHand';
+import CardFace, { describeCard } from './CardFace';
 import CargoBay from './CargoBay';
+import { CATEGORY_COLOR, CATEGORY_ICON } from './theme';
 
 export default function ActionPanel({ state, onAction }: { state: GameState; onAction: (action: EngineAction) => void }) {
   const pending = state.pendingAction;
@@ -10,17 +11,22 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
     const player = state.players.find((p) => p.id === pending.playerId)!;
     return (
       <div className="action-panel">
-        <h3>{player.name} drew a card</h3>
-        <div className="drawn-card">{describeCard(pending.drawnCard)}</div>
+        <div>
+          <h3>{player.name} drew a card</h3>
+          <p>Send it to one of the three destinations.</p>
+        </div>
+        <div className="card-spotlight">
+          <CardFace card={pending.drawnCard} animate />
+        </div>
         <div className="action-buttons">
-          <button disabled={pending.selfFilled} onClick={() => onAction({ type: 'allocate', destination: 'self' })}>
-            Keep for yourself
+          <button className="primary" disabled={pending.selfFilled} onClick={() => onAction({ type: 'allocate', destination: 'self' })}>
+            Keep it
           </button>
           <button disabled={pending.auctionFilled} onClick={() => onAction({ type: 'allocate', destination: 'auction' })}>
-            Send to Auction Bay
+            Send to auction bay
           </button>
           <button disabled={!pending.cargoAllowed} onClick={() => onAction({ type: 'allocate', destination: 'cargo' })}>
-            Send to Cargo Bay
+            Send to cargo bay
           </button>
         </div>
       </div>
@@ -31,7 +37,10 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
     const player = state.players.find((p) => p.id === pending.playerId)!;
     return (
       <div className="action-panel">
-        <h3>{player.name}: choose a card from the Cargo Bay</h3>
+        <div>
+          <h3>{player.name}: take a card from the cargo bay</h3>
+          <p>Pick one. The rest stay for the captains behind you.</p>
+        </div>
         <CargoBay cards={state.cargoBay} selectable onSelect={(cardId) => onAction({ type: 'draw-cargo', cardId })} />
       </div>
     );
@@ -41,8 +50,15 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
     const player = state.players.find((p) => p.id === pending.playerId)!;
     return (
       <div className="action-panel">
-        <h3>{player.name}: reveal the next auction card</h3>
-        <button onClick={() => onAction({ type: 'reveal' })}>Reveal</button>
+        <div>
+          <h3>{player.name}: reveal the next auction card</h3>
+          <p>{state.auctionBay.length} card{state.auctionBay.length === 1 ? '' : 's'} left in the bay.</p>
+        </div>
+        <div className="action-buttons">
+          <button className="primary" onClick={() => onAction({ type: 'reveal' })}>
+            Reveal card
+          </button>
+        </div>
       </div>
     );
   }
@@ -67,20 +83,43 @@ function BidPanel({ state, onAction }: { state: GameState; onAction: (action: En
   if (pending.type !== 'auction-bid') return null;
   const { bid } = pending;
   const bidder = state.players.find((p) => p.id === bid.nextBidderId)!;
-  const unit = bid.card.kind === 'credits' ? 'card(s)' : 'Credits';
+  // Credits cards are bought with cards; everything else is bought with credits.
+  const unit = (n: number) => (bid.card.kind === 'credits' ? `card${n === 1 ? '' : 's'}` : `credit${n === 1 ? '' : 's'}`);
   const [amount, setAmount] = useState(bid.highBid + 1);
+  const highBidder = bid.highBidderId ? state.players.find((p) => p.id === bid.highBidderId)! : null;
 
   return (
     <div className="action-panel">
-      <h3>Auctioning: {describeCard(bid.card)}</h3>
-      <p>
-        High bid: {bid.highBid} {unit}{' '}
-        {bid.highBidderId ? `(by ${state.players.find((p) => p.id === bid.highBidderId)!.name})` : ''}
-      </p>
-      <p>{bidder.name} to bid or pass</p>
-      <input type="number" min={bid.highBid + 1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-      <button onClick={() => onAction({ type: 'bid', amount })}>Bid</button>
-      <button onClick={() => onAction({ type: 'pass' })}>Pass</button>
+      <div>
+        <h3>Up for auction</h3>
+        <p>{describeCard(bid.card)}</p>
+      </div>
+      <div className="card-spotlight">
+        <CardFace card={bid.card} animate />
+      </div>
+      <div className="bid-readout">
+        <b>{highBidder ? bid.highBid : '—'}</b>
+        <span className="bid-holder">
+          {highBidder ? `${unit(bid.highBid)} bid by ${highBidder.name}` : 'No bids yet'}
+        </span>
+      </div>
+      <p>{bidder.name} to bid or pass.</p>
+      <div className="bid-controls">
+        <label className="nameplate" htmlFor="bid-amount">
+          Bid
+        </label>
+        <input
+          id="bid-amount"
+          type="number"
+          min={bid.highBid + 1}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+        />
+        <button className="primary" onClick={() => onAction({ type: 'bid', amount })}>
+          Place bid
+        </button>
+        <button onClick={() => onAction({ type: 'pass' })}>Pass</button>
+      </div>
     </div>
   );
 }
@@ -95,21 +134,37 @@ function PayPanel({ state, onAction }: { state: GameState; onAction: (action: En
     setSelected((prev) => (prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]));
   }
 
-  const unit = pending.card.kind === 'credits' ? 'cards' : 'Credits value';
+  const unit =
+    pending.card.kind === 'credits'
+      ? `card${pending.bidAmount === 1 ? '' : 's'}`
+      : `credit${pending.bidAmount === 1 ? '' : 's'} in value`;
   return (
     <div className="action-panel">
-      <h3>
-        {payer.name} must pay {pending.bidAmount} {unit}
-      </h3>
+      <div>
+        <h3>
+          {payer.name} owes {pending.bidAmount} {unit}
+        </h3>
+        <p>Choose the cards to hand over, then settle up.</p>
+      </div>
       <div className="pay-hand">
-        {payer.hand.map((card: Card) => (
-          <button key={card.id} className={selected.includes(card.id) ? 'card selected' : 'card'} onClick={() => toggle(card.id)}>
-            {describeCard(card)}
-          </button>
+        {payer.hand.map((card: Card, i: number) => (
+          <CardFace
+            key={card.id}
+            card={card}
+            index={i}
+            selected={selected.includes(card.id)}
+            onClick={() => toggle(card.id)}
+          />
         ))}
       </div>
-      <button onClick={() => onAction({ type: 'pay', cardIds: selected })}>Pay</button>
-      <button onClick={() => onAction({ type: 'forfeit-payment' })}>Forfeit</button>
+      <div className="action-buttons">
+        <button className="primary" onClick={() => onAction({ type: 'pay', cardIds: selected })}>
+          Pay {selected.length} card{selected.length === 1 ? '' : 's'}
+        </button>
+        <button className="danger" onClick={() => onAction({ type: 'forfeit-payment' })}>
+          Forfeit the card
+        </button>
+      </div>
     </div>
   );
 }
@@ -131,28 +186,62 @@ function MissionPanel({ state, onAction }: { state: GameState; onAction: (action
     });
   }
 
+  function isPicked(category: MissionAdjustment['category'], direction: 'plus' | 'minus') {
+    return picks.some((p) => p.category === category && p.direction === direction);
+  }
+
   return (
     <div className="action-panel">
-      <h3>
-        Mission Control card: choose {card.diceCount} categor{card.diceCount > 1 ? 'ies' : 'y'} to adjust
-      </h3>
+      <div>
+        <h3>Mission Control</h3>
+        <p>
+          Adjust {card.diceCount} categor{card.diceCount > 1 ? 'ies' : 'y'}. This changes what that cargo is worth for
+          everyone at the end of the game.
+        </p>
+      </div>
       <div className="mission-grid">
         {CATEGORY_ORDER.map((category) => (
-          <div key={category} className="mission-row">
-            <span>{CATEGORY_LABEL[category]}</span>
+          <div
+            key={category}
+            className="mission-row"
+            style={{ '--hue': CATEGORY_COLOR[category] } as CSSProperties}
+          >
+            <span aria-hidden="true">{CATEGORY_ICON[category]}</span>
+            <span className="mission-name">{CATEGORY_LABEL[category]}</span>
             {(card.modifier === 'plus' || card.modifier === 'mixed') && (
-              <button onClick={() => setPick(category, 'plus')}>+1</button>
+              <button
+                className={isPicked(category, 'plus') ? 'picked' : ''}
+                onClick={() => setPick(category, 'plus')}
+                aria-label={`Raise ${CATEGORY_LABEL[category]} by one`}
+              >
+                +1
+              </button>
             )}
             {(card.modifier === 'minus' || card.modifier === 'mixed') && (
-              <button onClick={() => setPick(category, 'minus')}>-1</button>
+              <button
+                className={isPicked(category, 'minus') ? 'picked' : ''}
+                onClick={() => setPick(category, 'minus')}
+                aria-label={`Lower ${CATEGORY_LABEL[category]} by one`}
+              >
+                -1
+              </button>
             )}
           </div>
         ))}
       </div>
-      <button disabled={picks.length !== card.diceCount} onClick={() => onAction({ type: 'resolve-mission', adjustments: picks })}>
-        Confirm
-      </button>
-      <button onClick={() => onAction({ type: 'decline-mission' })}>Discard without effect</button>
+      <span className="mission-picks">
+        {picks.length} of {card.diceCount} selected
+      </span>
+      <div className="action-buttons">
+        <button
+          className="primary"
+          disabled={picks.length !== card.diceCount}
+          onClick={() => onAction({ type: 'resolve-mission', adjustments: picks })}
+        >
+          Confirm adjustment
+        </button>
+        <button onClick={() => onAction({ type: 'decline-mission' })}>Discard without effect</button>
+      </div>
     </div>
   );
 }

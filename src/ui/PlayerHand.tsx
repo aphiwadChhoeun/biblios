@@ -1,24 +1,13 @@
-import { CATEGORY_LABEL, Card } from '../engine/types';
-import { CATEGORY_COLOR, CATEGORY_ICON } from './theme';
+import { Card } from '../engine/types';
+import CardFace, { describeCard } from './CardFace';
 
-export function describeCard(card: Card): string {
-  if (card.kind === 'category') return `${CATEGORY_LABEL[card.category]} ${card.value}${card.tieBreakLetter}`;
-  if (card.kind === 'credits') return `Credits ${card.value}`;
-  return `Mission Control ${card.modifier === 'mixed' ? '±1' : card.modifier === 'plus' ? '+1' : '-1'} (${card.diceCount}d)`;
-}
+export { describeCard };
 
 export function OwnHand({ hand }: { hand: Card[] }) {
   return (
     <div className="own-hand">
-      {hand.map((card) => (
-        <div
-          key={card.id}
-          className={`card card-${card.kind}`}
-          style={card.kind === 'category' ? { borderColor: CATEGORY_COLOR[card.category] } : undefined}
-        >
-          {card.kind === 'category' && <span>{CATEGORY_ICON[card.category]}</span>}
-          <span>{describeCard(card)}</span>
-        </div>
+      {hand.map((card, i) => (
+        <CardFace key={card.id} card={card} index={i} />
       ))}
     </div>
   );
@@ -28,15 +17,27 @@ export function OpponentSeat({
   name,
   cardCount,
   isActive,
+  isAI,
 }: {
   name: string;
   cardCount: number;
   isActive: boolean;
+  isAI?: boolean;
 }) {
   return (
     <div className={`opponent-seat${isActive ? ' active' : ''}`}>
       <div className="opponent-name">{name}</div>
-      <div className="opponent-cardback">{'🂠'.repeat(Math.min(cardCount, 10))} {cardCount}</div>
+      <div className="opponent-role">{isActive ? 'Acting now' : isAI ? 'Computer' : 'Standing by'}</div>
+      <div className="opponent-cardback">
+        <span className="cardback-stack" aria-hidden="true">
+          {Array.from({ length: Math.min(cardCount, 12) }, (_, i) => (
+            <span key={i} className="cardback" />
+          ))}
+        </span>
+        <span className="cardback-count">
+          {cardCount} card{cardCount === 1 ? '' : 's'}
+        </span>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,345 @@
+/* Cockpit grid: telemetry across the top, crew roster left, the stage in the
+   middle, the log right, your hand along the bottom. */
+
+.board-screen {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'strip strip strip'
+    'seats stage log'
+    'hand hand hand';
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Grid children default to min-width:auto, which lets wide content stretch the
+   whole board. Every region scrolls its own overflow instead. */
+.board-screen > * {
+  min-width: 0;
+}
+
+.board-screen > .telemetry-strip {
+  grid-area: strip;
+}
+
+.seat-roster {
+  grid-area: seats;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-3);
+  overflow-y: auto;
+  border-right: 1px solid var(--rim);
+  background: linear-gradient(90deg, rgba(10, 16, 32, 0.9), rgba(6, 10, 22, 0.6));
+}
+
+.main-stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  overflow-y: auto;
+}
+
+.log-panel {
+  grid-area: log;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  overflow-y: auto;
+  border-left: 1px solid var(--rim);
+  background: linear-gradient(270deg, rgba(10, 16, 32, 0.9), rgba(6, 10, 22, 0.6));
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 2.6ch 1fr;
+  gap: var(--s-2);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid rgba(30, 51, 88, 0.45);
+}
+
+.log-entry .log-mark {
+  color: var(--ink-faint);
+}
+
+/* Newest entry reads brightest; older ones recede. */
+.log-entry:first-child {
+  color: var(--ink);
+}
+
+.log-entry:first-child .log-mark {
+  color: var(--amber);
+}
+
+.hand-tray {
+  grid-area: hand;
+}
+
+/* Seats ------------------------------------------------------------------ */
+.opponent-seat {
+  position: relative;
+  padding: var(--s-3);
+  background: linear-gradient(180deg, var(--hull), var(--hull-sunken));
+  border: 1px solid var(--rim);
+  border-left: 3px solid var(--rim);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: border-color var(--mid) var(--ease), background var(--mid) var(--ease);
+}
+
+.opponent-name {
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.opponent-role {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.opponent-cardback {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.cardback-stack {
+  display: flex;
+}
+
+/* Overlapping card backs, so hand size is visible without counting. */
+.cardback {
+  width: 9px;
+  height: 22px;
+  margin-right: -3px;
+  background: linear-gradient(180deg, #24365e, #131d33);
+  border: 1px solid var(--rim-hot);
+  border-radius: 1px;
+}
+
+.cardback-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+  margin-left: var(--s-2);
+}
+
+.opponent-seat.active {
+  border-color: var(--rim-hot);
+  border-left-color: var(--amber);
+  background: linear-gradient(180deg, #16223c, #0b1222);
+}
+
+.opponent-seat.active .opponent-role {
+  color: var(--amber);
+}
+
+/* Scanner sweep marks whose turn it is without a blinking dot. */
+.opponent-seat.active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 182, 18, 0.16) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: scan 2.8s var(--ease) infinite;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Action panel ----------------------------------------------------------- */
+.action-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: linear-gradient(180deg, rgba(20, 32, 58, 0.55), rgba(8, 14, 28, 0.55));
+  border: 1px solid var(--rim);
+  border-top: 2px solid var(--amber);
+  border-radius: 2px;
+  box-shadow: var(--lift-2);
+  backdrop-filter: blur(2px);
+}
+
+.action-panel h3 {
+  font-size: var(--t-lg);
+}
+
+.action-panel p {
+  font-size: var(--t-sm);
+  color: var(--ink-dim);
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.bid-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.bid-readout {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-family: var(--font-mono);
+}
+
+.bid-readout b {
+  font-size: var(--t-2xl);
+  font-weight: 700;
+  color: var(--amber);
+  line-height: 1;
+}
+
+.bid-readout .bid-holder {
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+}
+
+.pay-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* Mission Control grid --------------------------------------------------- */
+.mission-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  max-width: 420px;
+}
+
+.mission-row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto auto;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  background: var(--hull-sunken);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--hue, var(--rim));
+  border-radius: 2px;
+}
+
+.mission-row .mission-name {
+  font-size: var(--t-sm);
+}
+
+.mission-row button {
+  font-family: var(--font-mono);
+  min-width: 3.2rem;
+  padding: var(--s-1) var(--s-2);
+}
+
+.mission-row button.picked {
+  color: var(--void);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.mission-picks {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+}
+
+/* Responsive: below the cockpit width it becomes one honest column. */
+@media (max-width: 900px) {
+  .board-screen {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      'strip'
+      'seats'
+      'stage'
+      'hand'
+      'log';
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .telemetry-strip {
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    padding: var(--s-3);
+  }
+
+  .strip-identity {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  /* All five gauges still fit a phone, just compacted. */
+  .command-console {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    gap: var(--s-1);
+    justify-content: stretch;
+  }
+
+  .die {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: var(--s-1) var(--s-2) var(--s-2);
+  }
+
+  .die-icon {
+    font-size: 0.7rem;
+  }
+
+  .die-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  .die-value {
+    font-size: var(--t-lg);
+  }
+
+  .seat-roster {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rim);
+  }
+
+  .opponent-seat {
+    min-width: 160px;
+  }
+
+  .log-panel {
+    border-left: none;
+    border-top: 1px solid var(--rim);
+    max-height: 240px;
+  }
+
+  .hand-tray {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

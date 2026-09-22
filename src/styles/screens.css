@@ -1,0 +1,226 @@
+/* Setup, resume and end share one centred launch-console frame. */
+
+.launch-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-6) var(--s-4);
+}
+
+.launch-console {
+  width: min(560px, 100%);
+  padding: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.launch-console.wide {
+  width: min(880px, 100%);
+}
+
+/* Masthead: the type is the artwork, and the five cargo hues sit under it so
+   the thing you are competing over is the first thing you read. */
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.game-title {
+  font-size: clamp(2.2rem, 7vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin: 0;
+  text-shadow: 0 0 44px rgba(120, 160, 230, 0.28);
+}
+
+.title-rule {
+  height: 2px;
+  background: linear-gradient(90deg, var(--amber), transparent 70%);
+}
+
+.cargo-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+}
+
+.cargo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 3px var(--s-2);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: var(--hull-sunken);
+  border: 1px solid var(--rim);
+  border-bottom: 2px solid var(--hue);
+  border-radius: 2px;
+}
+
+.launch-lede {
+  color: var(--ink-dim);
+  font-size: var(--t-sm);
+}
+
+/* Seats ------------------------------------------------------------------ */
+.seat-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.seat-row {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--hull-sunken);
+  border: 1px solid var(--rim);
+  border-radius: 2px;
+}
+
+.seat-index {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-faint);
+}
+
+.seat-row input[type='text'] {
+  width: 100%;
+}
+
+.seat-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.seat-toggle input {
+  accent-color: var(--amber);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.seat-controls {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.launch-actions {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.start-button {
+  font-size: var(--t-base);
+  padding: var(--s-3) var(--s-5);
+}
+
+/* End screen ------------------------------------------------------------- */
+.winner-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.winner-name {
+  font-size: var(--t-2xl);
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.tiebreak-note {
+  font-size: var(--t-xs);
+  color: var(--ink-dim);
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+
+.score-table th,
+.score-table td {
+  padding: var(--s-2) var(--s-3);
+  text-align: right;
+  border-bottom: 1px solid rgba(30, 51, 88, 0.6);
+}
+
+.score-table th:first-child,
+.score-table td:first-child {
+  text-align: left;
+}
+
+.score-table thead th {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  border-bottom-color: var(--rim);
+}
+
+.score-table tbody tr {
+  border-left: 3px solid var(--hue, transparent);
+}
+
+.score-table tbody td:first-child {
+  border-left: 3px solid var(--hue, transparent);
+  padding-left: var(--s-3);
+}
+
+.score-table .cat-winner {
+  color: var(--ink);
+}
+
+.score-table .points {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.score-table tfoot td {
+  border-top: 1px solid var(--rim);
+  border-bottom: none;
+  padding-top: var(--s-3);
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+
+.score-table tfoot .is-winner {
+  color: var(--amber);
+}
+
+/* Winner row ignites once the tally lands. */
+.score-table tfoot tr {
+  animation: ignite 900ms var(--ease) 700ms backwards;
+}
+
+@keyframes ignite {
+  from {
+    background: transparent;
+  }
+  45% {
+    background: rgba(255, 182, 18, 0.14);
+  }
+  to {
+    background: transparent;
+  }
+}

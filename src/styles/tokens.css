@@ -1,0 +1,78 @@
+/* Design tokens: a flight console rendered in CSS.
+   Hull greys and NASA amber/orange carry the chrome; the five category hues
+   carry information and are never used decoratively. */
+
+:root {
+  /* Structure --------------------------------------------------------- */
+  --void: #04060d;
+  --void-lift: #070b16;
+  --hull: #0d1526;
+  --hull-lift: #14203a;
+  --hull-sunken: #080e1c;
+  --rim: #1e3358;
+  --rim-hot: #2f5a99;
+
+  /* Ink ---------------------------------------------------------------- */
+  --ink: #dfe7f3;
+  --ink-dim: #8194b3;
+  --ink-faint: #55678a;
+
+  /* Signal ------------------------------------------------------------- */
+  --amber: #ffb612;
+  --amber-deep: #b47c00;
+  --orange: #fc3d21;
+  --nasa-blue: #0b3d91;
+  --blue-lit: #4d8bf5;
+  --go: #3ddc84;
+
+  /* Category hues (must stay legible on --hull) ------------------------ */
+  --cat-fuel: #ffb612;
+  --cat-crew: #4d8bf5;
+  --cat-artifact: #fc3d21;
+  --cat-chart: #c7cdd4;
+  --cat-data: #00b4d8;
+
+  /* Type --------------------------------------------------------------- */
+  --font-ui: 'Oxanium', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --t-xs: 0.694rem;
+  --t-sm: 0.833rem;
+  --t-base: 1rem;
+  --t-md: 1.2rem;
+  --t-lg: 1.44rem;
+  --t-xl: 1.728rem;
+  --t-2xl: 2.074rem;
+  --t-3xl: 2.488rem;
+
+  /* Space (4px base) ---------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
+  /* Elevation ----------------------------------------------------------- */
+  --lift-1: 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.5);
+  --lift-2: 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 28px rgba(0, 0, 0, 0.6);
+  --inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -10px 22px rgba(0, 0, 0, 0.45);
+
+  /* Motion -------------------------------------------------------------- */
+  --fast: 120ms;
+  --mid: 240ms;
+  --slow: 520ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Legacy variable names kept so nothing referencing them goes unstyled. */
+:root {
+  --color-bg: var(--void);
+  --color-panel: var(--hull);
+  --color-text: var(--ink);
+  --color-text-dim: var(--ink-dim);
+  --color-accent: var(--nasa-blue);
+  --color-accent-warn: var(--orange);
+}

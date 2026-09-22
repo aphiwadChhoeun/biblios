@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PlayerConfig } from '../engine/gameEngine';
+import GameTitle from './GameTitle';
 
 interface SeatConfig {
   name: string;
@@ -29,29 +30,52 @@ export default function SetupScreen({ onStart }: { onStart: (configs: PlayerConf
   }
 
   return (
-    <div className="setup-screen">
-      <h1>Star Manifest</h1>
-      <p>Assemble your crew of 2-4 captains.</p>
-      {seats.map((seat, index) => (
-        <div className="seat-row" key={index}>
-          <input value={seat.name} onChange={(e) => updateSeat(index, { name: e.target.value })} disabled={seat.isAI} />
-          <label>
-            <input type="checkbox" checked={seat.isAI} onChange={(e) => updateSeat(index, { isAI: e.target.checked })} />
-            AI
-          </label>
+    <div className="launch-shell">
+      <div className="launch-console panel setup-screen">
+        <GameTitle />
+        <p className="launch-lede">
+          Two to four captains compete to stock the best manifest. Trade cargo in the supply phase, then bid for what
+          you still need.
+        </p>
+
+        <div className="seat-list">
+          {seats.map((seat, index) => (
+            <div className="seat-row" key={index}>
+              <span className="seat-index">{String(index + 1).padStart(2, '0')}</span>
+              <input
+                type="text"
+                aria-label={`Captain ${index + 1} name`}
+                value={seat.name}
+                onChange={(e) => updateSeat(index, { name: e.target.value })}
+                disabled={seat.isAI}
+              />
+              <label className="seat-toggle">
+                <input
+                  type="checkbox"
+                  checked={seat.isAI}
+                  onChange={(e) => updateSeat(index, { isAI: e.target.checked })}
+                />
+                Computer
+              </label>
+            </div>
+          ))}
         </div>
-      ))}
-      <div className="seat-controls">
-        <button onClick={addSeat} disabled={seats.length >= 4}>
-          Add seat
-        </button>
-        <button onClick={removeSeat} disabled={seats.length <= 2}>
-          Remove seat
-        </button>
+
+        <div className="seat-controls">
+          <button onClick={addSeat} disabled={seats.length >= 4}>
+            Add captain
+          </button>
+          <button onClick={removeSeat} disabled={seats.length <= 2}>
+            Remove captain
+          </button>
+        </div>
+
+        <div className="launch-actions">
+          <button className="start-button" onClick={() => onStart(seats)}>
+            Launch Mission
+          </button>
+        </div>
       </div>
-      <button className="start-button" onClick={() => onStart(seats)}>
-        Launch Mission
-      </button>
     </div>
   );
 }
