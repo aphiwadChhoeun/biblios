@@ -46,7 +46,7 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
   }
 
   if (pending.type === 'auction-bid') {
-    return <BidPanel state={state} onAction={onAction} />;
+    return <BidPanel key={pending.bid.nextBidderId} state={state} onAction={onAction} />;
   }
 
   if (pending.type === 'auction-pay') {
