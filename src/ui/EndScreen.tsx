@@ -1,7 +1,7 @@
 import { CSSProperties } from 'react';
 import { CATEGORY_LABEL, CATEGORY_ORDER, GameState } from '../engine/types';
 import { CATEGORY_COLOR, CATEGORY_ICON } from './theme';
-import { useCountUp } from './useCountUp';
+import { useScoreCascade } from './useScoreCascade';
 import GameTitle from './GameTitle';
 
 const TIE_BREAK_REASON: Record<string, string> = {
@@ -10,15 +10,27 @@ const TIE_BREAK_REASON: Record<string, string> = {
   'category-cascade': 'category cascade',
 };
 
-function TotalCell({ total, isWinner }: { total: number; isWinner: boolean }) {
-  const shown = useCountUp(total);
-  return <td className={`mono${isWinner ? ' is-winner' : ''}`}>{shown}</td>;
-}
-
 export default function EndScreen({ state, onNewGame }: { state: GameState; onNewGame: () => void }) {
+  // Hooks must run before the early return below, so this is keyed off the
+  // fixed category count rather than anything inside the result.
+  const { revealedCount, done, skip } = useScoreCascade(CATEGORY_ORDER.length);
+
   if (state.pendingAction.type !== 'game-over') return null;
   const result = state.pendingAction.result;
   const winner = state.players.find((p) => p.id === result.winnerId)!;
+
+  // CategoryResult already carries its category; order it for display.
+  const orderedResults = CATEGORY_ORDER.map(
+    (category) => result.categoryResults.find((r) => r.category === category)!
+  );
+
+  // Totals are built from the categories revealed so far, so the score climbs
+  // with the cascade instead of jumping to its final value.
+  const runningTotals: Record<string, number> = {};
+  for (const p of state.players) runningTotals[p.id] = 0;
+  for (const row of orderedResults.slice(0, revealedCount)) {
+    if (row.winnerId) runningTotals[row.winnerId] += row.pointsAwarded;
+  }
 
   return (
     <div className="launch-shell">
@@ -26,8 +38,12 @@ export default function EndScreen({ state, onNewGame }: { state: GameState; onNe
         <GameTitle kicker="Mission complete" />
 
         <div className="winner-block">
-          <span className="winner-name">{winner.name} wins</span>
-          {result.tieBreakStage !== 'none' && (
+          {done ? (
+            <span className="winner-name">{winner.name} wins</span>
+          ) : (
+            <span className="winner-name pending">Tallying the manifest…</span>
+          )}
+          {done && result.tieBreakStage !== 'none' && (
             <span className="tiebreak-note">
               Decided on a tie-break: {TIE_BREAK_REASON[result.tieBreakStage] ?? result.tieBreakStage}.
             </span>
@@ -46,35 +62,43 @@ export default function EndScreen({ state, onNewGame }: { state: GameState; onNe
             </tr>
           </thead>
           <tbody>
-            {CATEGORY_ORDER.map((category) => {
-              const catResult = result.categoryResults.find((r) => r.category === category)!;
-              const catWinner = catResult.winnerId
-                ? state.players.find((p) => p.id === catResult.winnerId)!
-                : null;
+            {orderedResults.map((row, i) => {
+              const revealed = i < revealedCount;
+              const catWinner = row.winnerId ? state.players.find((p) => p.id === row.winnerId)! : null;
               return (
-                <tr key={category} style={{ '--hue': CATEGORY_COLOR[category] } as CSSProperties}>
+                <tr
+                  key={row.category}
+                  className={revealed ? 'revealed' : 'pending'}
+                  style={{ '--hue': CATEGORY_COLOR[row.category] } as CSSProperties}
+                >
                   <td>
-                    <span aria-hidden="true">{CATEGORY_ICON[category]}</span> {CATEGORY_LABEL[category]}
+                    <span aria-hidden="true">{CATEGORY_ICON[row.category]}</span> {CATEGORY_LABEL[row.category]}
                   </td>
                   {state.players.map((p) => (
                     <td key={p.id} className="mono">
-                      {catResult.totals[p.id]}
+                      {revealed ? row.totals[p.id] : '·'}
                     </td>
                   ))}
                   <td className={catWinner ? 'cat-winner' : ''}>
-                    {catWinner ? catWinner.name : '—'}
-                    {catResult.tieBreakUsed ? ' (tie-break)' : ''}
+                    {revealed ? (catWinner ? catWinner.name : '—') : ''}
+                    {revealed && row.tieBreakUsed ? ' (tie-break)' : ''}
                   </td>
-                  <td className="mono points">{catResult.pointsAwarded}</td>
+                  <td className="mono points">{revealed ? row.pointsAwarded : ''}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
-            <tr>
+            <tr className={done ? 'settled' : ''}>
               <td>Total victory points</td>
               {state.players.map((p) => (
-                <TotalCell key={p.id} total={result.diceTotals[p.id]} isWinner={p.id === result.winnerId} />
+                <td
+                  key={p.id}
+                  className={`mono${done && p.id === result.winnerId ? ' is-winner' : ''}`}
+                  data-testid={`total-${p.id}`}
+                >
+                  {runningTotals[p.id]}
+                </td>
               ))}
               <td colSpan={2} />
             </tr>
@@ -82,9 +106,13 @@ export default function EndScreen({ state, onNewGame }: { state: GameState; onNe
         </table>
 
         <div className="launch-actions">
-          <button className="start-button" onClick={onNewGame}>
-            Start New Mission
-          </button>
+          {done ? (
+            <button className="start-button" onClick={onNewGame}>
+              Start New Mission
+            </button>
+          ) : (
+            <button onClick={skip}>Skip tally</button>
+          )}
         </div>
       </div>
     </div>

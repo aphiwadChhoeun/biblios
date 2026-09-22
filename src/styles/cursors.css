@@ -1,0 +1,50 @@
+/* Instrument reticles standing in for the pointer. Each is a 24x24 inline SVG
+   with the hotspot at its centre (12,12) and a native cursor after the comma
+   as fallback, in case the data URI cannot be decoded. */
+
+:root {
+  /* Idle: amber brackets, hollow centre. */
+  --cursor-reticle: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="%23ffb612" stroke-width="1.5"><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><rect x="7.5" y="7.5" width="9" height="9"/></g><circle cx="12" cy="12" r="1.25" fill="%23ffb612"/></svg>');
+
+  /* Over something you can act on: filled centre, brackets closed in. */
+  --cursor-reticle-active: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="%23ffd34d" stroke-width="2"><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/><rect x="6.5" y="6.5" width="11" height="11"/></g><circle cx="12" cy="12" r="3" fill="%23ffd34d"/></svg>');
+
+  /* Standby: desaturated, brackets pulled apart, empty centre. */
+  --cursor-reticle-standby: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="%237b8aa6" stroke-width="1.5" opacity="0.85"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></g></svg>');
+}
+
+body {
+  cursor: var(--cursor-reticle) 12 12, auto;
+}
+
+/* Only genuinely clickable things get the active reticle. Hand cards are
+   display-only divs and keep the idle one. */
+button,
+button.card,
+label,
+summary,
+[role='button'] {
+  cursor: var(--cursor-reticle-active) 12 12, pointer;
+}
+
+/* A reticle over a text field misleads; keep the I-beam. */
+input[type='text'],
+input[type='number'],
+textarea {
+  cursor: text;
+}
+
+button:disabled,
+fieldset:disabled button,
+fieldset:disabled input {
+  cursor: not-allowed;
+}
+
+/* Whole board goes to standby while a bot is acting. Set on the region rather
+   than body so the tray, log and roster all agree. */
+.board-screen.locked,
+.board-screen.locked button,
+.board-screen.locked button.card,
+.board-screen.locked label {
+  cursor: var(--cursor-reticle-standby) 12 12, progress;
+}

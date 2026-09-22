@@ -11,6 +11,9 @@ import GameTitle from './ui/GameTitle';
 
 type Screen = 'resume-prompt' | 'setup' | 'playing';
 
+/** Pause between AI decisions, long enough to follow what changed on the board. */
+const AI_MOVE_DELAY_MS = 1200;
+
 export default function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [screen, setScreen] = useState<Screen>('setup');
@@ -24,7 +27,7 @@ export default function App() {
     if (!game) return;
     saveGame(game);
     if (isAITurn(game)) {
-      const timer = setTimeout(() => setGame(advanceAI(game)), 400);
+      const timer = setTimeout(() => setGame(advanceAI(game)), AI_MOVE_DELAY_MS);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -38,6 +41,9 @@ export default function App() {
 
   function handleAction(action: EngineAction) {
     if (!game) return;
+    // The board disables its controls during AI turns; this guards every other
+    // path so a human can never dispatch on a bot's behalf.
+    if (isAITurn(game)) return;
     setGame(dispatch(game, action));
   }
 

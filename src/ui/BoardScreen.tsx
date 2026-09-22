@@ -1,4 +1,5 @@
-import { EngineAction, GameState } from '../engine/types';
+import { useRef } from 'react';
+import { EngineAction, GameState, Player } from '../engine/types';
 import CommandConsole from './CommandConsole';
 import { OwnHand, OpponentSeat } from './PlayerHand';
 import CargoBay from './CargoBay';
@@ -26,14 +27,32 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
   const actorId = currentActorId(state);
   const actor = state.players.find((p) => p.id === actorId);
   const showCargoBayPanel = state.pendingAction.type !== 'gift-draw';
-  // Only reveal a hand face-up as the human player's "own hand" when the pending actor is a
-  // human. AI turns auto-advance and would otherwise briefly show the bot's hidden hand,
-  // breaking the game's hidden-information mechanic.
-  const showOwnHand = !!actor && !actor.isAI;
+
+  // The hand tray stays populated through AI turns so the player can keep
+  // reading their cards. It may only ever show a seat with isAI === false:
+  // rendering the acting bot's hand would break the hidden-information
+  // mechanic. During an AI turn we fall back to the human who acted last.
+  const lastHumanId = useRef<string | null>(null);
+  if (actor && !actor.isAI) lastHumanId.current = actor.id;
+  const humanSeats = state.players.filter((p) => !p.isAI);
+  const handOwner: Player | null =
+    actor && !actor.isAI
+      ? actor
+      : humanSeats.find((p) => p.id === lastHumanId.current) ?? humanSeats[0] ?? null;
+  const isHandOwnersTurn = !!handOwner && handOwner.id === actorId;
+
+  // beginAuctionPhase shuffles the auction bay into supplyDeck and empties the
+  // bay, so during the auction it is supplyDeck that holds the cards still to
+  // come under the hammer.
+  const auctionDeckCount = state.phase === 'auction' ? state.supplyDeck.length : state.auctionBay.length;
   const entries = state.log.slice(-40);
 
+  // While a bot holds the turn the board is read-only: controls are disabled
+  // and the cursor switches to the standby reticle.
+  const interactive = !!actor && !actor.isAI;
+
   return (
-    <div className="board-screen">
+    <div className={`board-screen${interactive ? '' : ' locked'}`}>
       <header className="telemetry-strip">
         <div className="strip-identity">
           <span className="strip-title">Star Manifest</span>
@@ -44,14 +63,23 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
         </div>
         <CommandConsole dice={state.dice} />
         <div className="piles-info mono">
-          <span className="pile-stat">
-            <b>{state.supplyDeck.length}</b>
-            <span>Supply</span>
-          </span>
-          <span className="pile-stat">
-            <b>{state.auctionBay.length}</b>
-            <span>Auction</span>
-          </span>
+          {state.phase === 'auction' ? (
+            <span className="pile-stat" data-testid="auction-deck-count">
+              <b>{auctionDeckCount}</b>
+              <span>Auction deck</span>
+            </span>
+          ) : (
+            <>
+              <span className="pile-stat">
+                <b>{state.supplyDeck.length}</b>
+                <span>Supply</span>
+              </span>
+              <span className="pile-stat" data-testid="auction-deck-count">
+                <b>{auctionDeckCount}</b>
+                <span>Auction</span>
+              </span>
+            </>
+          )}
           <span className="pile-stat">
             <b>{state.discardPile.length}</b>
             <span>Discard</span>
@@ -62,7 +90,7 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
       <aside className="seat-roster">
         <span className="nameplate">Captains</span>
         {state.players
-          .filter((p) => (showOwnHand ? p.id !== actor!.id : true))
+          .filter((p) => (handOwner ? p.id !== handOwner.id : true))
           .map((p) => (
             <OpponentSeat
               key={p.id}
@@ -75,7 +103,7 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
       </aside>
 
       <main className="main-stage">
-        <ActionPanel state={state} onAction={onAction} />
+        <ActionPanel state={state} onAction={onAction} interactive={interactive} />
         {showCargoBayPanel && <CargoBay cards={state.cargoBay} selectable={false} />}
       </main>
 
@@ -93,17 +121,21 @@ export default function BoardScreen({ state, onAction }: { state: GameState; onA
           ))}
       </section>
 
-      <footer className="hand-tray">
+      <footer className={`hand-tray${handOwner && !isHandOwnersTurn ? ' waiting' : ''}`}>
         <div className="hand-tray-label">
-          <b>{showOwnHand ? `${actor!.name}'s hand` : 'Hand'}</b>
+          <b>{handOwner ? `${handOwner.name}'s hand` : 'Hand'}</b>
           <span className="nameplate">
-            {showOwnHand ? `${actor!.hand.length} card${actor!.hand.length === 1 ? '' : 's'}` : 'Concealed'}
+            {handOwner
+              ? isHandOwnersTurn
+                ? `${handOwner.hand.length} card${handOwner.hand.length === 1 ? '' : 's'}`
+                : `Waiting · ${handOwner.hand.length} card${handOwner.hand.length === 1 ? '' : 's'}`
+              : 'No human seat'}
           </span>
         </div>
-        {showOwnHand ? (
-          <OwnHand hand={actor!.hand} />
+        {handOwner ? (
+          <OwnHand hand={handOwner.hand} />
         ) : (
-          <p className="hand-concealed">Cards stay face down while the computer takes its turn.</p>
+          <p className="hand-concealed">Every seat is played by the computer.</p>
         )}
       </footer>
     </div>

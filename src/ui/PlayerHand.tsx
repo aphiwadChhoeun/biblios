@@ -1,13 +1,30 @@
+import { CSSProperties } from 'react';
 import { Card } from '../engine/types';
 import CardFace, { describeCard } from './CardFace';
+import { groupHand } from './handGroups';
 
 export { describeCard };
 
 export function OwnHand({ hand }: { hand: Card[] }) {
+  const groups = groupHand(hand);
+
   return (
     <div className="own-hand">
-      {hand.map((card, i) => (
-        <CardFace key={card.id} card={card} index={i} />
+      {groups.map((group) => (
+        <section key={group.key} className="hand-group" style={{ '--hue': group.hue } as CSSProperties}>
+          <header className="hand-group-head">
+            <span aria-hidden="true">{group.icon}</span>
+            <span className="hand-group-name">{group.label}</span>
+            <span className="hand-group-tally mono">
+              {group.subtotal === null ? `${group.count}` : `${group.count} · ${group.subtotal}`}
+            </span>
+          </header>
+          <div className="hand-group-cards">
+            {group.cards.map((card, i) => (
+              <CardFace key={card.id} card={card} index={i} />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );

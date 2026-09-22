@@ -166,6 +166,20 @@
 }
 
 /* Action panel ----------------------------------------------------------- */
+/* Fieldset is used purely to disable the whole panel during AI turns; strip
+   its default chrome so it is invisible. */
+.action-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.action-fieldset:disabled .action-panel {
+  opacity: 0.6;
+  border-top-color: var(--rim);
+}
+
 .action-panel {
   display: flex;
   flex-direction: column;

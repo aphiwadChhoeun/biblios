@@ -5,6 +5,7 @@
 @import './styles/cards.css';
 @import './styles/panels.css';
 @import './styles/screens.css';
+@import './styles/cursors.css';
 
 :root {
   color-scheme: dark;

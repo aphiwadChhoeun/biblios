@@ -208,9 +208,36 @@
   color: var(--amber);
 }
 
+/* Cascade: unrevealed rows sit quiet until their category lands. */
+.score-table tbody tr.pending td {
+  color: var(--ink-faint);
+  opacity: 0.45;
+}
+
+.score-table tbody tr.revealed {
+  animation: row-land var(--mid) var(--ease);
+}
+
+@keyframes row-land {
+  from {
+    background: color-mix(in srgb, var(--hue) 18%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.winner-name.pending {
+  color: var(--ink-dim);
+}
+
+.score-table tfoot td {
+  transition: color var(--mid) var(--ease);
+}
+
 /* Winner row ignites once the tally lands. */
-.score-table tfoot tr {
-  animation: ignite 900ms var(--ease) 700ms backwards;
+.score-table tfoot tr.settled {
+  animation: ignite 900ms var(--ease) backwards;
 }
 
 @keyframes ignite {

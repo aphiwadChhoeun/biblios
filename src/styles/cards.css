@@ -181,12 +181,60 @@ button.card:disabled {
   font-weight: 600;
 }
 
+/* The tray stays readable through AI turns, but recedes so it is obvious the
+   board is not waiting on you. */
+.hand-tray.waiting {
+  opacity: 0.72;
+}
+
+.hand-tray.waiting .hand-tray-label b {
+  color: var(--ink-dim);
+}
+
 .own-hand {
   display: flex;
-  gap: var(--s-2);
+  align-items: flex-end;
+  gap: var(--s-5);
   flex: 1;
   overflow-x: auto;
   padding: var(--s-2) 0;
+}
+
+/* Grouped hand: one cluster per cargo category, then credits, then orders. */
+.hand-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  flex: 0 0 auto;
+}
+
+.hand-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-bottom: 3px;
+  border-bottom: 1px solid color-mix(in srgb, var(--hue) 45%, transparent);
+}
+
+.hand-group-name {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.hand-group-tally {
+  margin-left: auto;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--hue);
+  white-space: nowrap;
+}
+
+.hand-group-cards {
+  display: flex;
+  gap: var(--s-1);
 }
 
 /* Hand cards sit a size down: a full hand has to fit the tray without the

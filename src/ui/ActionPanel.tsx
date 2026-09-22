@@ -4,7 +4,28 @@ import CardFace, { describeCard } from './CardFace';
 import CargoBay from './CargoBay';
 import { CATEGORY_COLOR, CATEGORY_ICON } from './theme';
 
-export default function ActionPanel({ state, onAction }: { state: GameState; onAction: (action: EngineAction) => void }) {
+export default function ActionPanel({
+  state,
+  onAction,
+  interactive = true,
+}: {
+  state: GameState;
+  onAction: (action: EngineAction) => void;
+  /** False while an AI holds the turn. Disables every control inside. */
+  interactive?: boolean;
+}) {
+  const body = PanelBody({ state, onAction });
+  if (!body) return null;
+  // A disabled fieldset natively disables every control it contains, so a
+  // stray (or programmatic) click cannot dispatch on the AI's behalf.
+  return (
+    <fieldset className="action-fieldset" disabled={!interactive} aria-busy={!interactive}>
+      {body}
+    </fieldset>
+  );
+}
+
+function PanelBody({ state, onAction }: { state: GameState; onAction: (action: EngineAction) => void }) {
   const pending = state.pendingAction;
 
   if (pending.type === 'gift-allocate') {
@@ -52,7 +73,10 @@ export default function ActionPanel({ state, onAction }: { state: GameState; onA
       <div className="action-panel">
         <div>
           <h3>{player.name}: reveal the next auction card</h3>
-          <p>{state.auctionBay.length} card{state.auctionBay.length === 1 ? '' : 's'} left in the bay.</p>
+          {/* The auction deck lives in supplyDeck once beginAuctionPhase runs. */}
+          <p>
+            {state.supplyDeck.length} card{state.supplyDeck.length === 1 ? '' : 's'} left in the auction deck.
+          </p>
         </div>
         <div className="action-buttons">
           <button className="primary" onClick={() => onAction({ type: 'reveal' })}>
@@ -92,7 +116,10 @@ function BidPanel({ state, onAction }: { state: GameState; onAction: (action: En
     <div className="action-panel">
       <div>
         <h3>Up for auction</h3>
-        <p>{describeCard(bid.card)}</p>
+        <p>
+          {describeCard(bid.card)}. {state.supplyDeck.length} card{state.supplyDeck.length === 1 ? '' : 's'} still to
+          come.
+        </p>
       </div>
       <div className="card-spotlight">
         <CardFace card={bid.card} animate />
