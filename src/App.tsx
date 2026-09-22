@@ -4,6 +4,7 @@ import { createGame, dispatch, PlayerConfig } from './engine/gameEngine';
 import { advanceAI, isAITurn } from './engine/ai';
 import { saveGame, loadGame, clearSavedGame } from './engine/storage';
 import SetupScreen from './ui/SetupScreen';
+import BoardScreen from './ui/BoardScreen';
 
 type Screen = 'resume-prompt' | 'setup' | 'playing';
 
@@ -66,11 +67,5 @@ export default function App() {
     return <SetupScreen onStart={handleStart} />;
   }
 
-  // Board/End screens are wired in Tasks 11-13; render a minimal placeholder for now.
-  return (
-    <div>
-      <p>Phase: {game.phase}</p>
-      <button onClick={() => handleAction({ type: 'reveal' })}>debug</button>
-    </div>
-  );
+  return <BoardScreen state={game} onAction={handleAction} />;
 }
